@@ -1,15 +1,48 @@
 #!/usr/bin/python
 
-from PIL import Image
 import argparse
+from PIL import Image
+from os import path
 from serial import Serial
 from struct import pack
+from time import sleep
+from json import load
+from time import sleep
+
+from win32gui import GetForegroundWindow, GetWindowText
+from win32process import GetWindowThreadProcessId, GetModuleFileNameEx
+from win32con import PROCESS_QUERY_INFORMATION
+from win32api import OpenProcess, CloseHandle
 
 SCREEN_WIDTH = 128
 SCREEN_HEIGHT = 64
-RATIO = 1
+RATIO = 0.8
 CROP_PERCENTAGE = 0.1
 FRAMES = 6
+
+def animate(filename, frames = None):
+    with Image.open(filename) as image:
+        # print("%d, %d" % (image.width, image.height))
+        CROP_WIDTH = image.width * CROP_PERCENTAGE
+        CROP_HEIGHT = image.height * CROP_PERCENTAGE
+
+        arr = []
+
+        if frames is None:
+            frames = image.n_frames
+
+        for idx in range(frames):
+            if idx % (image.n_frames // FRAMES) == 0:
+                # print("Frame #%d" % idx)
+                image.seek(idx)
+                
+                frame = image.crop((CROP_WIDTH, CROP_HEIGHT, image.width - CROP_WIDTH, image.height - CROP_HEIGHT))
+                
+                frame.thumbnail((SCREEN_WIDTH * RATIO, SCREEN_HEIGHT * RATIO), Image.Resampling.LANCZOS)
+
+                arr.append(writeArray(frame))
+
+        return arr
 
 def writeArray(frame):
     bitIdx = 0
@@ -34,45 +67,17 @@ def writeArray(frame):
                 byte = 0
                 bitIdx = 0
 
-        # print("Bytes per line", len(line))
         content += line
 
     if (bitIdx < 8):
-        byte = byte << (8 - bitIdx)        
-        line.append(f"0b{byte:08b}")
+        byte = byte << (8 - bitIdx)
+        byte |= (1 << (8 - bitIdx)) - 1
+        #line.append(f"0b{byte:08b}")
+        line.append(byte)
         bitIdx = 0
         byte = 0
 
     return content
-    # return "{ %s }" % ", ".join(content)
-
-def parse(filename, frames = None):
-    with Image.open(filename) as image:
-        # print("%d, %d" % (image.width, image.height))
-        CROP_WIDTH = image.width * CROP_PERCENTAGE
-        CROP_HEIGHT = image.height * CROP_PERCENTAGE
-
-        arr = []
-
-        if frames is None:
-            frames = image.n_frames
-
-        for idx in range(frames):
-            if idx % (image.n_frames // FRAMES) == 0:
-                # print("Frame #%d" % idx)
-                image.seek(idx)
-                
-                frame = image.crop((CROP_WIDTH, CROP_HEIGHT, image.width - CROP_WIDTH, image.height - CROP_HEIGHT))
-                
-                frame.thumbnail((SCREEN_WIDTH * RATIO, SCREEN_HEIGHT * RATIO), Image.Resampling.LANCZOS)
-
-                arr.append(writeArray(frame))
-
-        return arr
-    return None
-        # print("%d, %d" % (frame.width, frame.height))
-        # final = "static const unsigned char PROGMEM animation[{FRAMES}][{IMGSIZE}] = {{ {CONTENT} }};".format(IMGSIZE = int(frame.width * frame.height / 8), FRAMES = FRAMES, CONTENT = ", ".join(arr))
-        # return final
 
 MAGIC = 0x4242
 def handshake(s):
@@ -91,8 +96,6 @@ def handshake(s):
     else:
         print("Error in magic value:", result)
         return False
-
-MSG_TYPE_IMAGE = 0
 
 CHUNK_SIZE = 16
 CHUNK_ACK = 0x42
@@ -118,15 +121,26 @@ def sendDataInChunks(s, data):
     
     return True
 
+MSG_TYPE_IMAGE = 0
+MSG_TYPE_KEYS = 1
+MSG_TYPE_RESET = 2
+
 def sendImage(s, x, y, filename):
     with Image.open(filename) as image:
         # print("%d, %d" % (image.width, image.height))
         CROP_WIDTH = image.width * CROP_PERCENTAGE
         CROP_HEIGHT = image.height * CROP_PERCENTAGE
 
-        frame = image.crop((CROP_WIDTH, CROP_HEIGHT, image.width - CROP_WIDTH, image.height - CROP_HEIGHT))
+        # frame = image.crop((CROP_WIDTH, CROP_HEIGHT, image.width - CROP_WIDTH, image.height - CROP_HEIGHT))
+        frame = image
                 
-        frame.thumbnail((SCREEN_WIDTH * RATIO, SCREEN_HEIGHT * RATIO), Image.Resampling.LANCZOS)
+        frame.thumbnail((SCREEN_HEIGHT * RATIO, SCREEN_HEIGHT * RATIO), Image.Resampling.LANCZOS)
+
+        frame = image.crop((0, 0, SCREEN_HEIGHT, SCREEN_HEIGHT))
+        frame.save("sample.png")
+
+        #final = Image.new(mode="1", size = (SCREEN_HEIGHT, SCREEN_HEIGHT), color = (1))
+        #final.paste(frame)
 
         result = writeArray(frame)
 
@@ -138,29 +152,148 @@ def sendImage(s, x, y, filename):
         pack("H", frame.height) + \
         pack("H", len(result))
 
-        print(frame.width, frame.height)
-
-        # Append the data
-        #print(len(result))
-        #print(pack("H", len(result)))
-        #print(msg + bytes(result))
-
         s.write(msg)
-        sendDataInChunks(s, bytes(result))
+        return sendDataInChunks(s, bytes(result))
+
+def sendKeys(s, keys):
+    SPECIAL = {
+        "CTRL": 0x80,
+        "SHIFT": 0x81,
+        "ALT": 0x82,
+        "WIN": 0x83,
+        "UP": 0xDA,
+        "DOWN": 0xD9,
+        "LEFT": 0xD8,
+        "RIGHT": 0xD7,
+        "BACKSPACE": 0xB2,
+        "TAB": 0xB3,
+        "RETURN": 0xB0,
+        "MENU": 0xED,
+        "ESC": 0xB1,
+        "INSERT": 0xD1,
+        "DELETE": 0xD4,
+        "PAGE_UP": 0xD3,
+        "PAGE_DOWN": 0xD6,
+        "HOME": 0xD2,
+        "END": 0xD5,
+        "CAPS": 0xC1,
+        "PRINT_SCREEN": 0xCE,
+        "PAUSE": 0xD0,
+        "NUMLOCK": 0xDB,
+        "F1": 0xC2,
+        "F2": 0xC3,
+        "F3": 0xC4,
+        "F4": 0xC5,
+        "F5": 0xC6,
+        "F6": 0xC7,
+        "F7": 0xC8,
+        "F8": 0xC9,
+        "F9": 0xCA,
+        "F10": 0xCB,
+        "F11": 0xCC,
+        "F12": 0xCD
+    }
+
+    numbers = [ a for a in map(lambda x: SPECIAL[x] if x in SPECIAL else 
+                  (ord(x) & 0b1011111) if ord('a') <= ord(x) <= ord('z') else
+                  ord(x), keys) ]
+    
+    msg = pack("B", MSG_TYPE_KEYS) + \
+    pack("B", len(numbers)) + \
+    bytes(numbers)
+    
+    s.write(msg)
+
+def sendReset(s):
+    msg = pack("B", MSG_TYPE_RESET)
+    s.write(msg)
+
+def getCurrentWindow():
+    activeWindow = GetForegroundWindow()
+    tid, pid = GetWindowThreadProcessId(activeWindow)
+    proc = OpenProcess(PROCESS_QUERY_INFORMATION, False, pid)
+    fullpath = GetModuleFileNameEx(proc, 0)
+    title = GetWindowText(activeWindow)
+    CloseHandle(proc)
+
+    return {"proc": path.basename(fullpath),
+            "title": title}
+
+def daemon(config):
+    lastCfg = None
+
+    while True:
+        found = False
+        try:
+            window = getCurrentWindow()
+        except:
+            window = None
+
+        if window is not None:
+            for c in config["configs"]:
+                if "proc" not in c or \
+                    "title" not in c or \
+                    "image" not in c or \
+                    "x" not in c or \
+                    "y" not in c or \
+                    "keys" not in c:
+                    continue
+
+                if window["proc"] != c["proc"]:
+                    continue
+
+                if c["title"] != "" and c["title"] not in window["title"]:
+                    continue
+
+                if not path.exists(c["image"]):
+                    continue
+
+                found = True
+
+                # Don't update
+                if lastCfg == c:
+                    break
+
+                print("RULE: ", window)
+
+                lastCfg = c
+
+                s = Serial(
+                    port = config["port"],
+                    baudrate = 115200,
+                    timeout = 2)
+                
+                if handshake(s):
+                    if sendImage(s, c["x"], c["y"], c["image"]):
+                        sendKeys(s, c["keys"])
+                
+                s.close()
+
+                break
+
+        if not found and lastCfg != None:
+            print("RULE: IDLE")
+
+            lastCfg = None
+
+            s = Serial(
+                port = config["port"],
+                baudrate = 115200,
+                timeout = 2)
+            
+            if handshake(s):
+                sendReset(s)
+            
+            s.close()
+
+        sleep(2)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Send image to OneBtn')
-    parser.add_argument("port", help = "Serial port (COM/ttyS)")
-    parser.add_argument("img", help = "Image to send")
+    parser = argparse.ArgumentParser(description='Configuration daemon for OneBtn')
+    parser.add_argument("config", help = "Configuration file")
 
     args = parser.parse_args()
+    with open(args.config, "r") as f:
+        config = load(f)
 
-    s = Serial(
-        port = args.port,
-        baudrate = 115200,
-        timeout = 2)
-
-    if (handshake(s)):
-        sendImage(s, 30, -15, args.img)
-
-    s.close()
+    daemon(config)
