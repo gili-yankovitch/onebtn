@@ -131,25 +131,19 @@ def sendImage(s, x, y, filename):
         CROP_WIDTH = image.width * CROP_PERCENTAGE
         CROP_HEIGHT = image.height * CROP_PERCENTAGE
 
-        # frame = image.crop((CROP_WIDTH, CROP_HEIGHT, image.width - CROP_WIDTH, image.height - CROP_HEIGHT))
-        frame = image
-                
-        frame.thumbnail((SCREEN_HEIGHT * RATIO, SCREEN_HEIGHT * RATIO), Image.Resampling.LANCZOS)
+        # frame = image.crop((CROP_WIDTH, CROP_HEIGHT, image.width - CROP_WIDTH, image.height - CROP_HEIGHT))                
+        image.thumbnail((SCREEN_HEIGHT * RATIO, SCREEN_HEIGHT * RATIO), Image.Resampling.LANCZOS)
+        final = Image.new(mode="1", size = (SCREEN_HEIGHT, SCREEN_HEIGHT), color = (1))
+        final.paste(image)
 
-        frame = image.crop((0, 0, SCREEN_HEIGHT, SCREEN_HEIGHT))
-        frame.save("sample.png")
-
-        #final = Image.new(mode="1", size = (SCREEN_HEIGHT, SCREEN_HEIGHT), color = (1))
-        #final.paste(frame)
-
-        result = writeArray(frame)
+        result = writeArray(final)
 
         # Build the message to send
         msg = pack("B", MSG_TYPE_IMAGE) + \
         pack("H", x & 0xffff) + \
         pack("H", y & 0xffff) +\
-        pack("H", frame.width) + \
-        pack("H", frame.height) + \
+        pack("H", final.width) + \
+        pack("H", final.height) + \
         pack("H", len(result))
 
         s.write(msg)
@@ -194,9 +188,7 @@ def sendKeys(s, keys):
         "F12": 0xCD
     }
 
-    numbers = [ a for a in map(lambda x: SPECIAL[x] if x in SPECIAL else 
-                  (ord(x) & 0b1011111) if ord('a') <= ord(x) <= ord('z') else
-                  ord(x), keys) ]
+    numbers = [ a for a in map(lambda x: SPECIAL[x] if x in SPECIAL else ord(x), keys) ]
     
     msg = pack("B", MSG_TYPE_KEYS) + \
     pack("B", len(numbers)) + \
@@ -239,10 +231,10 @@ def daemon(config):
                     "keys" not in c:
                     continue
 
-                if window["proc"] != c["proc"]:
+                if window["proc"].lower() != c["proc"].lower():
                     continue
 
-                if c["title"] != "" and c["title"] not in window["title"]:
+                if c["title"] != "" and c["title"].lower() not in window["title"].lower():
                     continue
 
                 if not path.exists(c["image"]):
