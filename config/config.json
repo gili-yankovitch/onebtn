@@ -1,0 +1,27 @@
+{
+    "port": "COM15",
+    "configs": [
+        {
+            "proc": "Code.exe",
+            "title": "",
+            "image": "icons\\hammer.png",
+            "x": 45,
+            "y": -5,
+            "keys": [
+                "CTRL",
+                "`"
+            ]
+        },
+        {
+            "proc": "winword.exe",
+            "title": "",
+            "image": "icons\\save-icon-512x512-q70qics8.png",
+            "x": 40,
+            "y": -5,
+            "keys": [
+                "CTRL",
+                "s"
+            ]
+        }
+    ]
+}
