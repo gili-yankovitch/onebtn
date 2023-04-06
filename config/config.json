@@ -15,12 +15,32 @@
         {
             "proc": "winword.exe",
             "title": "",
-            "image": "icons\\save-icon-512x512-q70qics8.png",
+            "image": "icons\\save.png",
             "x": 40,
             "y": -5,
             "keys": [
                 "CTRL",
                 "s"
+            ]
+        },
+        {
+            "proc": "chrome.exe",
+            "title": "netflix",
+            "image": "icons\\play.png",
+            "x": 37,
+            "y": -7,
+            "keys": [
+                " "
+            ]
+        },
+        {
+            "proc": "chrome.exe",
+            "title": "youtube",
+            "image": "icons\\play.png",
+            "x": 37,
+            "y": -7,
+            "keys": [
+                " "
             ]
         }
     ]

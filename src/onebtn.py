@@ -19,6 +19,7 @@ SCREEN_HEIGHT = 64
 RATIO = 0.8
 CROP_PERCENTAGE = 0.1
 FRAMES = 6
+CONFIG_FOLDER = None
 
 def animate(filename, frames = None):
     with Image.open(filename) as image:
@@ -237,7 +238,9 @@ def daemon(config):
                 if c["title"] != "" and c["title"].lower() not in window["title"].lower():
                     continue
 
-                if not path.exists(c["image"]):
+                img = path.sep.join((CONFIG_FOLDER, c["image"]))
+
+                if not path.exists(img):
                     continue
 
                 found = True
@@ -256,7 +259,7 @@ def daemon(config):
                     timeout = 2)
                 
                 if handshake(s):
-                    if sendImage(s, c["x"], c["y"], c["image"]):
+                    if sendImage(s, c["x"], c["y"], img):
                         sendKeys(s, c["keys"])
                 
                 s.close()
@@ -281,11 +284,19 @@ def daemon(config):
         sleep(2)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Configuration daemon for OneBtn')
-    parser.add_argument("config", help = "Configuration file")
+    CONFIG_FOLDER = path.sep.join((path.dirname(__file__), "config"))
 
-    args = parser.parse_args()
-    with open(args.config, "r") as f:
+    # Find config folder
+    if not path.exists(path.sep.join((CONFIG_FOLDER, "config.json"))):
+        CONFIG_FOLDER = path.sep.join((path.dirname(__file__), "..", "config"))
+
+        if not path.exists(path.sep.join((CONFIG_FOLDER, "config.json"))):
+            print("Did not find config folder")
+            exit(1)
+
+    print("Config folder:", CONFIG_FOLDER)
+        
+    with open(path.sep.join((CONFIG_FOLDER, "config.json")), "r") as f:
         config = load(f)
 
     daemon(config)
