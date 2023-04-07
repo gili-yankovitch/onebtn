@@ -395,6 +395,8 @@ ret:
 
 void loop()
 {
+  static uint8_t delayCtr = 0;
+
   // Configuration logic
   if (Serial.available())
   {
@@ -413,31 +415,39 @@ void loop()
     ledStrip.SetPixelColor(0, RgbColor(0, 255, 0));
     ledStrip.Show();
 
-    // Press all keys
-    for (i = 0; i < keys.n; ++i)
+    if (keys.keys)
     {
-      Keyboard.press(keys.keys[i]);
-      delay(10);
+      // Press all keys
+      for (i = 0; i < keys.n; ++i)
+      {
+        Keyboard.press(keys.keys[i]);
+        delay(10);
+      }
+
+      Keyboard.releaseAll();
+
+      delay(200);
+    }
+  }
+
+  if (delayCtr++ % 4 == 0)
+  {
+    // Loop forever...
+    display.clearDisplay(); // Clear the display buffer
+
+    if (img.data != NULL)
+    {
+      display.drawBitmap(img.x, img.y + (animationIdx % 2) * 5, img.data, img.width, img.height, SSD1306_WHITE);
+    }
+    else
+    {
+      display.drawBitmap(30, -15, animation[animationIdx], 64, 64, SSD1306_WHITE);
     }
 
-    delay(100);
-    Keyboard.releaseAll();
+    animationIdx = (animationIdx + 1) % FRAMES;
+
+    display.display(); // Show the display buffer on the screen
   }
 
-  // Loop forever...
-  display.clearDisplay(); // Clear the display buffer
-
-  if (img.data != NULL)
-  {
-    display.drawBitmap(img.x, img.y + (animationIdx % 2) * 5, img.data, img.width, img.height, SSD1306_WHITE);
-  }
-  else
-  {
-    display.drawBitmap(30, -15, animation[animationIdx], 64, 64, SSD1306_WHITE);
-  }
-
-  animationIdx = (animationIdx + 1) % FRAMES;
-
-  display.display(); // Show the display buffer on the screen
-  delay(200);        // Pause for 1/10 second
+  delay(50); // Pause for a while
 }

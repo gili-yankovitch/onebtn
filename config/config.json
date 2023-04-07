@@ -27,7 +27,7 @@
             "proc": "chrome.exe",
             "title": "netflix",
             "image": "icons\\play.png",
-            "x": 37,
+            "x": 40,
             "y": -7,
             "keys": [
                 " "
@@ -37,10 +37,21 @@
             "proc": "chrome.exe",
             "title": "youtube",
             "image": "icons\\play.png",
-            "x": 37,
+            "x": 40,
             "y": -7,
             "keys": [
                 " "
+            ]
+        },
+        {
+            "proc": "Hearthstone.exe",
+            "title": "",
+            "image": "icons\\hearthstone.png",
+            "x": 40,
+            "y": -7,
+            "keys": [
+                "ALT",
+                "TAB"
             ]
         }
     ]

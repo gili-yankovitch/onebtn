@@ -212,17 +212,29 @@ def getCurrentWindow():
     return {"proc": path.basename(fullpath),
             "title": title}
 
-def daemon(config):
+def daemon():
     lastCfg = None
 
     while True:
+        # Support on-the-fly changes
+        try:
+            with open(path.sep.join((CONFIG_FOLDER, "config.json")), "r") as f:
+                loadedConfig = load(f)
+
+            config = loadedConfig
+        except:
+            # Use old config
+            pass
+
         found = False
         try:
             window = getCurrentWindow()
         except:
             window = None
 
-        if window is not None:
+        if window is not None and \
+            "configs" in config and \
+            "port" in config:
             for c in config["configs"]:
                 if "proc" not in c or \
                     "title" not in c or \
@@ -294,9 +306,4 @@ if __name__ == "__main__":
             print("Did not find config folder")
             exit(1)
 
-    print("Config folder:", CONFIG_FOLDER)
-        
-    with open(path.sep.join((CONFIG_FOLDER, "config.json")), "r") as f:
-        config = load(f)
-
-    daemon(config)
+    daemon()
