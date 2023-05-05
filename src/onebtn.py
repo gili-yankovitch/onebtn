@@ -293,7 +293,7 @@ def daemon():
             
             s.close()
 
-        sleep(2)
+        sleep(1)
 
 if __name__ == "__main__":
     CONFIG_FOLDER = path.sep.join((path.dirname(__file__), "config"))

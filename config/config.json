@@ -9,7 +9,8 @@
             "y": -5,
             "keys": [
                 "CTRL",
-                "`"
+                "SHIFT",
+                "b"
             ]
         },
         {
@@ -34,10 +35,20 @@
             ]
         },
         {
-            "proc": "chrome.exe",
-            "title": "youtube",
+            "proc": "stremio.exe",
+            "title": "",
             "image": "icons\\play.png",
             "x": 40,
+            "y": -7,
+            "keys": [
+                " "
+            ]
+        },
+        {
+            "proc": "chrome.exe",
+            "title": "youtube",
+            "image": "icons\\youtube.png",
+            "x": 38,
             "y": -7,
             "keys": [
                 " "
@@ -52,6 +63,51 @@
             "keys": [
                 "ALT",
                 "TAB"
+            ]
+        },
+        {
+            "proc": "Overwatch.exe",
+            "title": "",
+            "image": "icons\\overwatch.png",
+            "x": 40,
+            "y": -7,
+            "keys": [
+                "WIN",
+                "d"
+            ]
+        },
+        {
+            "proc": "Spotify.exe",
+            "title": "",
+            "image": "icons\\play.png",
+            "x": 40,
+            "y": -7,
+            "keys": [
+                " "
+            ]
+        },
+        {
+            "proc": "teams.exe",
+            "title": "",
+            "image": "icons\\mic.png",
+            "x": 40,
+            "y": -7,
+            "keys": [
+                "CTRL",
+                "SHIFT",
+                "m"
+            ]
+        },
+        {
+            "proc": "zoom.exe",
+            "title": "",
+            "image": "icons\\mic.png",
+            "x": 40,
+            "y": -7,
+            "keys": [
+                "CTRL",
+                "SHIFT",
+                "m"
             ]
         }
     ]
