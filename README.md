@@ -34,5 +34,16 @@ All PCB specs are provided here under [hardware/](https://github.com/gili-yankov
 | 1 | Outemu Switch Mechanical Keyboard Switch 3Pin | [Link](https://www.aliexpress.com/item/1005002378701948.html?spm=a2g0o.order_list.order_list_main.242.3f8418028cM6Vv) |  |
 
 # Software
-## Software Building and Flashing
-TBD
+## Building
+To build this project, usage of PlatformIO is recommended although the Arduino IDE will probably work as well. To use PlatformIO, simply run:
+```
+pio run --environment leonardo
+```
+
+## Flashing
+This device accepts software in two ways: First through the ICSP port and the other through USB (after flashing Arduino Leonardo bootloader).
+
+To flash using the ICSP port, simply use any Arduino device, flash it with the Arduino as ISP example from the Arduino IDE and use it to flash firmware to this device. While doing that, one might wish to use the Arduino IDE further by simply flashing the Arduino Bootloader to the device. Once this is done, USB flashing will be available. To flash the software using USB, simply run:
+```
+pio run --environment leonardo --target upload
+```
